@@ -1,16 +1,5 @@
 use std::collections::HashMap;
 
-fn main() {
-    println!("Analysing vector!");
-
-    let mut my_vec = vec![10, 20, 30, 30, 15, 45];
-    println!("{:?}", analyse_vector(&mut my_vec[..]));
-
-    let start_text = String::from("hello world and welcome to my awesome program");
-    println!("Translating '{}' to pig latin", start_text);
-    println!("{}", to_pig_latin(&start_text));
-}
-
 #[derive(Debug)]
 struct VectorStats {
     mean: u32,
@@ -64,4 +53,15 @@ fn word_to_pig_latin(input: &str) -> String {
 
         return format!("{}{}ay", chars.as_str(), first_char);
     }
+}
+
+fn main() {
+    println!("Analysing vector!");
+
+    let mut my_vec = vec![10, 20, 30, 30, 15, 45];
+    println!("{:?}", analyse_vector(&mut my_vec));
+
+    let start_text = String::from("hello world and welcome to my awesome program");
+    println!("Translating '{}' to pig latin", start_text);
+    println!("{}", to_pig_latin(&start_text));
 }
