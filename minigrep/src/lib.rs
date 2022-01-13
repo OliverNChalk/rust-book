@@ -2,8 +2,6 @@ use std::env;
 use std::error::Error;
 use std::fs;
 
-const ARGS_COUNT: usize = 3;
-
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.filename)?;
 
@@ -27,17 +25,23 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, String> {
-        if args.len() != ARGS_COUNT {
-            return Err(format!(
-                "receive {} argmuents, expected {}",
-                args.len() - 1,
-                ARGS_COUNT,
-            ));
-        }
+    pub fn new<T>(mut args: T) -> Result<Config, &'static str>
+    where
+        T: Iterator<Item = String>,
+    {
+        args.next(); // usually arg1 is the executable, skip it
 
-        let query = args[1].clone();
-        let filename = args[2].clone();
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("missing query argument"),
+        };
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("missing filename argument"),
+        };
+        if let Some(_) = args.next() {
+            return Err("additional arguments");
+        }
 
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
@@ -50,28 +54,19 @@ impl Config {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = vec![];
-
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
-
-    return results;
+    return contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect();
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     let query = query.to_lowercase();
-    let mut results = vec![];
 
-    for line in contents.lines() {
-        if line.to_lowercase().contains(&query) {
-            results.push(line);
-        }
-    }
-
-    return results;
+    return contents
+        .lines()
+        .filter(|line| line.to_lowercase().contains(&query))
+        .collect();
 }
 
 #[cfg(test)]
@@ -80,8 +75,9 @@ mod tests {
 
     #[test]
     fn rejects_insufficient_args() {
+        // let args = [String::from("/path/to/bin"), String::from("arg1")];
         let args = [String::from("/path/to/bin"), String::from("arg1")];
-        let config = Config::new(&args);
+        let config = Config::new(IntoIterator::into_iter(args));
 
         assert!(config.is_err());
     }
@@ -93,7 +89,7 @@ mod tests {
             String::from("arg1"),
             String::from("arg2"),
         ];
-        let config = Config::new(&args);
+        let config = Config::new(IntoIterator::into_iter(args));
 
         assert!(config.is_ok());
     }
@@ -106,7 +102,7 @@ mod tests {
             String::from("arg2"),
             String::from("arg3"),
         ];
-        let config = Config::new(&args);
+        let config = Config::new(IntoIterator::into_iter(args));
 
         assert!(config.is_err());
     }
