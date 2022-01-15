@@ -9,18 +9,18 @@ fn main() {
     let post = post.request_review().reject();
 
     // approve until it prints
-    let mut post = post.request_review();
-    loop {
-        match post.approve() {
-            Ok(approved) => {
-                println!("{}", approved.content());
-                break;
-            }
-            Err(insufficient) => {
-                println!("insufficient approvals, continuing");
-                post = insufficient;
-                continue;
+    let post = post.request_review();
+
+    let mut post = post.approve();
+    let post = loop {
+        match post {
+            Ok(post) => break post,
+            Err(draft) => {
+                println!("insufficient approvals...");
+                post = draft.approve();
             }
         }
-    }
+    };
+
+    println!("{}", post.content());
 }
